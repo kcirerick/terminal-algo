@@ -183,44 +183,37 @@ class GameState:
     def _invalid_unit(self, unit):
         self.warn("Invalid unit {}".format(unit))
 
-    def _generate_board_half(self, size):
-        board = np.ones((int(size/2), size))
-        board = np.tril(board)
-        board = np.triu(board)
-        np.fill_diagonal(board, 1)
-        np.fill_diagonal(np.fliplr(board), 1)
-        return board
+   
 
     # May need adjusting according to how it fits into our algorithm.
     def _create_action_space(self, size):
+        board_locations = []
+        for  j in range(13, -1, -1):
+
+            for i in range(13 - j, j+15):
+                board_locations.append([i,j])
         actions = ["SPAWN", "REMOVE", "UPGRADE"]
         units = ["SCOUT", "DEMOLISHER", "INTERCEPTOR"]
         structures = ["WALL", "SUPPORT", "TURRET"]
-        half_board = generate_board_half(size)
-        bounds = (half_board!=0).argmax(axis=0)
-        bounds = bounds[:int(bounds.shape[0]/2)]
-        action_space = [] # Maps each index to an action.
+        action_space = [] 
         index = 0 
-        # We will define tuples (action, unit/struct)
-        for i in range(len(bounds)):
-            bound = bounds[i]
-            for j in range(bound, half_board.shape[1] - bound):
-                if (j == bound): # If we are on a diagonal then we can spawn units.
-                    # Spawn units
-                    for unit in units:
-                      new_action = (actions[0], unit, (i, j))
-                      action_space.append(new_action)
-                    
-                # Spawn structures
-                for structure in structures:
-                    new_action = (actions[0], structure)
+        for location in board_locations:
+            if ((location[1] + location[0] == 13) or location[0] - (location[1] == 14)): # If we are on a diagonal then we can spawn units.
+
+                for unit in units:
+                    new_action = (actions[0], unit, location)
                     action_space.append(new_action)
 
-                # Remove/upgrade location
-                new_action = (actions[1], 0, (i, j))
+
+            for structure in structures:
+                new_action = (actions[0], structure, location)
                 action_space.append(new_action)
-                new_action = (actions[2], 0, (i, j))
-                action_space.append(new_action)
+
+
+            new_action = (actions[1],  location)
+            action_space.append(new_action)
+            new_action = (actions[2], location)
+            action_space.append(new_action)
         return action_space
 
     def _is_valid_remove(self, move):
